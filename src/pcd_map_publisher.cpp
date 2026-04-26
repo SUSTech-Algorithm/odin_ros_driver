@@ -22,13 +22,13 @@ public:
         this->declare_parameter<std::string>("topic_name", "/odin1/map_pcd");
         this->declare_parameter<std::string>("frame_id", "odom");
         this->declare_parameter<bool>("publish_once", true);
-        this->declare_parameter<float>("publish_rate", 1.0f);
+        this->declare_parameter<double>("publish_rate", 1.0);
 
         std::string pcd_file_path = this->get_parameter("pcd_file_path").as_string();
         std::string topic_name = this->get_parameter("topic_name").as_string();
         std::string frame_id = this->get_parameter("frame_id").as_string();
         publish_once_ = this->get_parameter("publish_once").as_bool();
-        float publish_rate = this->get_parameter("publish_rate").as_float();
+        double publish_rate = this->get_parameter("publish_rate").as_double();
 
         publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name, 1);
 
@@ -57,10 +57,10 @@ public:
                 publishMap();
                 RCLCPP_INFO(this->get_logger(), "Map published once, node will continue running");
             } else {
-                auto period = std::chrono::duration<float>(1.0f / publish_rate);
+                auto period = std::chrono::duration<double>(1.0 / publish_rate);
                 timer_ = this->create_wall_timer(
                     std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::duration<float>(period)),
+                        std::chrono::duration<double>(period)),
                     [this]() { this->publishMap(); });
             }
         } catch (const std::exception& e) {
