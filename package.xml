@@ -5,25 +5,26 @@
   <description>ROS driver for Odin sensor</description>
   <maintainer email="oliveiratang@manifoldtech.cn">rlk</maintainer>
   <license>Apache 2.0</license>
-  
-  <!-- ROS1 uses catkin as the build tool -->
-  <buildtool_depend>catkin</buildtool_depend>
-  
-  <!-- ROS1 dependencies -->
-  <depend>roscpp</depend>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_lint_auto</buildtool_depend>
+
+  <!-- ROS2 dependencies -->
+  <depend>rclcpp</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
-  
+  <depend>pcl_conversions</depend>
+  <depend>pcl_ros</depend>
+
   <!-- System dependencies -->
   <depend>eigen</depend>
   <depend>opencv</depend>
   <depend>yaml-cpp</depend>
-  
-  <!-- Specify build type as catkin -->
+
   <export>
-    <build_type>catkin</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
