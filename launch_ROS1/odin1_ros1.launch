@@ -32,6 +32,16 @@
         <rosparam command="load" file="$(find odin_ros_driver)/config/control_command.yaml"/>
     </node>
     
+    <!-- PCD map publisher node - only launched in relocalization mode (custom_map_mode=2) -->
+    <group if="$(eval custom_map_mode == 2)">
+        <node pkg="odin_ros_driver" type="pcd_map_publisher" name="pcd_map_publisher" output="screen">
+            <param name="pcd_file_path" value="$(arg pcd_map_abs_path)" />
+            <param name="topic_name" value="/odin1/map_pcd" />
+            <param name="frame_id" value="odom" />
+            <param name="publish_once" value="true" />
+        </node>
+    </group>
+
     <!-- Launch RViz with configuration -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" output="screen"/>
 </launch>

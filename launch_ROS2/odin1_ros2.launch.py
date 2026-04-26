@@ -26,6 +26,15 @@ def generate_launch_description():
         description='Path to RViz2 config file'
     )
     
+    # Load config to check custom_map_mode
+    config_file_path = os.path.join(package_dir, 'config', 'control_command.yaml')
+    with open(config_file_path, 'r') as f:
+        config_params = yaml.safe_load(f)
+    
+    custom_map_mode = config_params.get('register_keys', {}).get('custom_map_mode', 0)
+    show_pcd_map = config_params.get('register_keys', {}).get('show_pcd_map', 0)
+    pcd_map_path = config_params.get('register_keys', {}).get('pcd_map_abs_path', '')
+    
     # Create main node
     host_sdk_node = Node(
         package='odin_ros_driver',
@@ -77,6 +86,24 @@ def generate_launch_description():
         parameters=[overlay_params]
     )
 
+    # PCD map publisher node - only launched when show_pcd_map is enabled
+    pcd_map_publisher_nodes = []
+    if show_pcd_map == 1 and pcd_map_path:
+        pcd_map_params = {
+            'pcd_file_path': pcd_map_path,
+            'topic_name': '/odin1/map_pcd',
+            'frame_id': 'odom',
+            'publish_once': True,
+        }
+        pcd_map_node = Node(
+            package='odin_ros_driver',
+            executable='pcd_map_publisher',
+            name='pcd_map_publisher',
+            output='screen',
+            parameters=[pcd_map_params]
+        )
+        pcd_map_publisher_nodes.append(pcd_map_node)
+
     # Create RViz2 node - loads specified configuration file
     rviz_node = Node(
         package='rviz2',
@@ -94,6 +121,8 @@ def generate_launch_description():
     ld.add_action(pcd2depth_node)
     ld.add_action(cloud_reprojection_node)
     ld.add_action(image_overlay_node)
+    for node in pcd_map_publisher_nodes:
+        ld.add_action(node)
     ld.add_action(rviz_node)  # Add RViz node
     
     return ld

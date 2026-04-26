@@ -359,6 +359,17 @@ elseif(ROS_VERSION STREQUAL "ROS2")
         message_filters
     )
 
+    add_executable(pcd_map_publisher src/pcd_map_publisher.cpp)
+    target_link_libraries(pcd_map_publisher
+        ${COMMON_LIBS}
+        yaml-cpp
+    )
+    ament_target_dependencies(pcd_map_publisher
+        rclcpp
+        sensor_msgs
+        pcl_conversions
+    )
+
     # Installation rules - ensure all install targets are defined before ament_package()
     # Install executable
     install(TARGETS 
@@ -366,6 +377,7 @@ elseif(ROS_VERSION STREQUAL "ROS2")
         pcd2depth_ros2_node
         cloud_reprojection_ros2_node
         image_overlay_node
+        pcd_map_publisher
         EXPORT export_${PROJECT_NAME}
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
