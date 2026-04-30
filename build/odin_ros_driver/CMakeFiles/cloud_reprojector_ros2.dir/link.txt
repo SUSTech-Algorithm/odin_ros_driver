@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcloud_reprojector_ros2.a CMakeFiles/cloud_reprojector_ros2.dir/src/cloud_reprojector.cpp.o
+/usr/bin/ranlib libcloud_reprojector_ros2.a

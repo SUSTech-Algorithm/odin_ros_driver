@@ -1,0 +1,2 @@
+/usr/bin/ar qc libpointcloud_depth_converter_ros2.a CMakeFiles/pointcloud_depth_converter_ros2.dir/src/pointcloud_depth_converter.cpp.o
+/usr/bin/ranlib libpointcloud_depth_converter_ros2.a

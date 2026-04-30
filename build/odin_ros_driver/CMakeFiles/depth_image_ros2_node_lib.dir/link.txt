@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdepth_image_ros2_node_lib.a CMakeFiles/depth_image_ros2_node_lib.dir/src/depth_image_ros2_node.cpp.o
+/usr/bin/ranlib libdepth_image_ros2_node_lib.a
