@@ -1,0 +1,6 @@
+pcd_publisher_node:
+  ros__parameters:
+    pcd_file_path: "/home/yxm/odin_ros_driver/map.pcd"   # 请替换为真实的 PCD 文件绝对路径
+    topic_name: "/odin1/map"
+    frame_id: "map"
+    publish_interval_ms: 1000

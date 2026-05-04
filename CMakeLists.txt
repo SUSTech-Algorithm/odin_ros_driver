@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 project(odin_ros_driver)
 
-
+# ==========================================
+# ROS 2 Jazzy 版本的环境检测逻辑
+# ==========================================
 if(DEFINED BUILD_SYSTEM)
     set(ROS_VERSION ${BUILD_SYSTEM})
     message(STATUS "ROS_VERSION: ${ROS_VERSION}")
 elseif(DEFINED ENV{ROS_DISTRO})
-    if("$ENV{ROS_DISTRO}" MATCHES "foxy|galactic|humble|iron|rolling")
+    if("$ENV{ROS_DISTRO}" MATCHES "foxy|galactic|humble|iron|rolling|jazzy")
         set(ROS_VERSION "ROS2")
     else()
         set(ROS_VERSION "ROS1")
@@ -18,19 +20,16 @@ elseif(DEFINED ENV{ROS_VERSION})
         set(ROS_VERSION "ROS1")
     endif()
 else()
-    # Attempt automatic detection
     if(COMMAND catkin_package)
         set(ROS_VERSION "ROS1")
     elseif(COMMAND ament_package)
         set(ROS_VERSION "ROS2")
     else()
-        # Default to ROS2
         set(ROS_VERSION "ROS2")
         message(WARNING "Unable to determine ROS version, defaulting to ROS2")
     endif()
 endif()
 
-# Add compile definitions after detecting ROS version
 if(ROS_VERSION STREQUAL "ROS2")
     add_definitions(-DROS2)
     message(STATUS "Defining ROS2")
@@ -95,8 +94,6 @@ endif()
 # Set common compile options
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Set optimization flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
 # Find common dependencies
@@ -108,7 +105,6 @@ find_package(yaml-cpp REQUIRED)
 find_package(OpenSSL REQUIRED)
 pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 
-# Shared include directories
 include_directories(
     include
     ${EIGEN3_INCLUDE_DIRS}
@@ -119,7 +115,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Shared library list
 set(COMMON_LIBS
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
@@ -134,109 +129,15 @@ set(COMMON_LIBS
 
 # ===== ROS1 Configuration =====
 if(ROS_VERSION STREQUAL "ROS1")
-    message(STATUS "Configuring for ROS1 build")
-    
-    find_package(catkin REQUIRED COMPONENTS
-        roscpp
-        std_msgs
-        sensor_msgs
-        nav_msgs
-        cv_bridge
-        tf
-        image_transport
-    )
-    
-    include_directories(${catkin_INCLUDE_DIRS})
-    
-    catkin_package(
-        CATKIN_DEPENDS roscpp std_msgs sensor_msgs nav_msgs cv_bridge image_transport
-        INCLUDE_DIRS include
-    )
-    
-    # Set output directories
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib/${PROJECT_NAME})
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib)
-    
-    add_executable(host_sdk_sample 
-        src/host_sdk_sample.cpp
-        src/yaml_parser.cpp
-        src/rawCloudRender.cpp
-        src/camera_pose_visualization.cpp
-    )
-    target_link_libraries(host_sdk_sample
-        ${catkin_LIBRARIES}
-        ${COMMON_LIBS}
-	${LYD_HOST_API_LIB}
-    	${LIBUSB_LIBRARIES}
-    	yaml-cpp
-    	${OpenCV_LIBS}
-    	pthread  
-        usb-1.0
-    )
-
-    add_library(pointcloud_depth_converter src/pointcloud_depth_converter.cpp)
-    target_link_libraries(pointcloud_depth_converter
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-    )
-    add_library(depth_image_ros_node src/depth_image_ros_node.cpp)
-    target_link_libraries(depth_image_ros_node
-    pointcloud_depth_converter
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-    )
-    add_executable(pcd2depth_node src/pcd2depth_ros.cpp)
-    target_link_libraries(pcd2depth_node
-    depth_image_ros_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-    )
-
-    add_library(cloud_reprojector src/cloud_reprojector.cpp)
-    target_link_libraries(cloud_reprojector
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-    )
-
-    add_executable(cloud_reprojection_node src/cloud_reprojection_ros.cpp)
-    target_link_libraries(cloud_reprojection_node
-    cloud_reprojector
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-    )
-
-    add_executable(image_overlay_node src/image_overlay_node.cpp)
-    target_link_libraries(image_overlay_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    )
-
-    # Installation rules
-    install(TARGETS host_sdk_sample
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
-    
-    install(DIRECTORY include/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-        FILES_MATCHING PATTERN "*.h"
-    )
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/config")
-        install(DIRECTORY config/
-            DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
-        )
-    endif()
+    message(FATAL_ERROR "This CMakeLists is optimized for ROS2 Jazzy. Please use ROS2 environment.")
 
 # ===== ROS2 Configuration =====
 elseif(ROS_VERSION STREQUAL "ROS2")
     message(STATUS "Configuring for ROS2 build")
     
-    # Find all necessary ROS2 packages
     find_package(ament_cmake REQUIRED)
     find_package(rclcpp REQUIRED)
+    find_package(ament_index_cpp REQUIRED)
     find_package(std_msgs REQUIRED)
     find_package(sensor_msgs REQUIRED)
     find_package(nav_msgs REQUIRED)
@@ -250,117 +151,45 @@ elseif(ROS_VERSION STREQUAL "ROS2")
     find_package(geometry_msgs REQUIRED)
     find_package(tf2_geometry_msgs REQUIRED)
     
-    # Create executable
     add_executable(host_sdk_sample 
         src/host_sdk_sample.cpp
         src/yaml_parser.cpp  
         src/rawCloudRender.cpp
         src/camera_pose_visualization.cpp
         )
-    
-    # Link libraries
-    target_link_libraries(host_sdk_sample
-        ${COMMON_LIBS}
-        yaml-cpp
-        usb-1.0
-    )
-    
-    # Add ROS2 dependencies
-    ament_target_dependencies(host_sdk_sample
-        rclcpp 
-        std_msgs 
-        sensor_msgs 
-        nav_msgs 
-        visualization_msgs
-        cv_bridge
-        image_transport
-        tf2
-        tf2_ros
-        geometry_msgs
-        tf2_geometry_msgs
-    )
+    target_link_libraries(host_sdk_sample ${COMMON_LIBS} yaml-cpp usb-1.0)
+    ament_target_dependencies(host_sdk_sample rclcpp ament_index_cpp std_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge image_transport tf2 tf2_ros geometry_msgs tf2_geometry_msgs)
     
     add_library(pointcloud_depth_converter_ros2 src/pointcloud_depth_converter.cpp)
-    target_link_libraries(pointcloud_depth_converter_ros2
-        ${OpenCV_LIBS}
-        ${PCL_LIBRARIES}
-    )
+    target_link_libraries(pointcloud_depth_converter_ros2 ${OpenCV_LIBS} ${PCL_LIBRARIES})
     
     add_library(depth_image_ros2_node_lib src/depth_image_ros2_node.cpp)
-    target_link_libraries(depth_image_ros2_node_lib
-        pointcloud_depth_converter_ros2
-        ${OpenCV_LIBS}
-        ${PCL_LIBRARIES}
-    )
-    
-    ament_target_dependencies(depth_image_ros2_node_lib
-        rclcpp
-        sensor_msgs
-        std_msgs
-        cv_bridge
-        image_transport
-        pcl_conversions
-        message_filters
-    )
+    target_link_libraries(depth_image_ros2_node_lib pointcloud_depth_converter_ros2 ${OpenCV_LIBS} ${PCL_LIBRARIES})
+    ament_target_dependencies(depth_image_ros2_node_lib rclcpp sensor_msgs std_msgs cv_bridge image_transport pcl_conversions message_filters)
 
     add_executable(pcd2depth_ros2_node src/pcd2depth_ros2.cpp)
-    target_link_libraries(pcd2depth_ros2_node
-        depth_image_ros2_node_lib
-        ${OpenCV_LIBS}
-        ${PCL_LIBRARIES}
-        yaml-cpp
-    )
-    
-    ament_target_dependencies(pcd2depth_ros2_node
-        rclcpp
-        sensor_msgs
-        std_msgs
-        cv_bridge
-        image_transport
-        pcl_conversions
-        message_filters
-    )
+    target_link_libraries(pcd2depth_ros2_node depth_image_ros2_node_lib ${OpenCV_LIBS} ${PCL_LIBRARIES} yaml-cpp)
+    ament_target_dependencies(pcd2depth_ros2_node rclcpp sensor_msgs std_msgs cv_bridge image_transport pcl_conversions message_filters)
 
     add_library(cloud_reprojector_ros2 src/cloud_reprojector.cpp)
     target_compile_definitions(cloud_reprojector_ros2 PRIVATE ROS2)
-    target_link_libraries(cloud_reprojector_ros2
-        ${OpenCV_LIBS}
-        ${PCL_LIBRARIES}
-    )
+    target_link_libraries(cloud_reprojector_ros2 ${OpenCV_LIBS} ${PCL_LIBRARIES})
 
     add_executable(cloud_reprojection_ros2_node src/cloud_reprojection_ros.cpp)
     target_compile_definitions(cloud_reprojection_ros2_node PRIVATE ROS2)
-    target_link_libraries(cloud_reprojection_ros2_node
-        cloud_reprojector_ros2
-        ${OpenCV_LIBS}
-        ${PCL_LIBRARIES}
-        yaml-cpp
-    )
-    ament_target_dependencies(cloud_reprojection_ros2_node
-        rclcpp
-        sensor_msgs
-        nav_msgs
-        cv_bridge
-        image_transport
-        pcl_conversions
-        message_filters
-    )
+    target_link_libraries(cloud_reprojection_ros2_node cloud_reprojector_ros2 ${OpenCV_LIBS} ${PCL_LIBRARIES} yaml-cpp)
+    ament_target_dependencies(cloud_reprojection_ros2_node rclcpp sensor_msgs nav_msgs cv_bridge image_transport pcl_conversions message_filters)
 
     add_executable(image_overlay_node src/image_overlay_node.cpp)
     target_compile_definitions(image_overlay_node PRIVATE ROS2)
-    target_link_libraries(image_overlay_node
-        ${OpenCV_LIBS}
-    )
-    ament_target_dependencies(image_overlay_node
-        rclcpp
-        sensor_msgs
-        cv_bridge
-        image_transport
-        message_filters
-    )
+    target_link_libraries(image_overlay_node ${OpenCV_LIBS})
+    ament_target_dependencies(image_overlay_node rclcpp sensor_msgs cv_bridge image_transport message_filters)
 
-    # Installation rules - ensure all install targets are defined before ament_package()
-    # Install executable
+    # =========================================================================
+    # 注意：这里已经删除了 C++ 版本的 pcd_publisher_node 编译代码！
+    # 彻底杜绝了 _ZN8eprosima7fastcdr3Cdr9serializeEj 的冲突问题
+    # =========================================================================
+
     install(TARGETS 
         host_sdk_sample 
         pcd2depth_ros2_node
@@ -371,42 +200,33 @@ elseif(ROS_VERSION STREQUAL "ROS2")
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION lib/${PROJECT_NAME}
     )
-    
-    # Install package.xml
-    install(FILES package.xml
-        DESTINATION share/${PROJECT_NAME}
+
+    # ==========================================
+    # Python 脚本的精准路径安装
+    # ==========================================
+    install(PROGRAMS
+        scripts/relocation_node.py
+        src/pcd_publisher_node.py     # <--- 已经根据你的实际路径修正成了 src/
+        DESTINATION lib/${PROJECT_NAME}
     )
     
-    # Install headers
-    install(DIRECTORY include/
-        DESTINATION include
-    )
-    # Install launch_ROS2 directory
+    install(FILES package.xml DESTINATION share/${PROJECT_NAME})
+    install(DIRECTORY include/ DESTINATION include)
+    
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launch_ROS2")
-        install(DIRECTORY launch_ROS2/
-            DESTINATION share/${PROJECT_NAME}/launch
-        )
-        message(STATUS "Installing launch_ROS2 directory to share/${PROJECT_NAME}/launch")
-    else()
-        message(WARNING "launch_ROS2 directory not found")
+        install(DIRECTORY launch_ROS2/ DESTINATION share/${PROJECT_NAME}/launch)
     endif()
-    # Install config files
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/config")
-        install(DIRECTORY config/
-            DESTINATION share/${PROJECT_NAME}/config
-        )
+        install(DIRECTORY config/ DESTINATION share/${PROJECT_NAME}/config)
+    endif()
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launch")
+        install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch)
     endif()
     
-    # Install launch files
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launch")
-        install(DIRECTORY launch/
-            DESTINATION share/${PROJECT_NAME}/launch
-        )
-    endif()
     ament_export_targets(export_${PROJECT_NAME})
-    # Declare dependencies
     ament_export_dependencies(
         rclcpp 
+        ament_index_cpp
         std_msgs 
         sensor_msgs 
         nav_msgs 
@@ -428,20 +248,6 @@ else()
     message(FATAL_ERROR "Invalid ROS_VERSION: ${ROS_VERSION}")
 endif()
 
-# ARM platform specific link options
 if(TARGET_PLATFORM STREQUAL "arm")
-    set_target_properties(host_sdk_sample PROPERTIES
-        LINK_FLAGS "-Wl,--no-as-needed -Wl,--rpath=${LIB_DIR}"
-    )
-    message(STATUS "Adding ARM-specific link options and RPATH")
+    set_target_properties(host_sdk_sample PROPERTIES LINK_FLAGS "-Wl,--no-as-needed -Wl,--rpath=${LIB_DIR}")
 endif()
-
-# Add debug information
-message(STATUS "=======================================")
-message(STATUS "Project: ${PROJECT_NAME}")
-message(STATUS "ROS_VERSION: ${ROS_VERSION}")
-message(STATUS "Target platform: ${TARGET_PLATFORM}")
-message(STATUS "lydHostApi library: ${LYD_HOST_API_LIB}")
-message(STATUS "libusb library: ${LIBUSB_LIBRARIES}")
-message(STATUS "=======================================")
-
